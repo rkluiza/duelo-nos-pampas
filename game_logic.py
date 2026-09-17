@@ -1,11 +1,15 @@
 import random
 
 class DuelTimer:
+
+    # Server
     def __init__(self, min_seconds=0.0, max_seconds=10.0):
         # Sorteia o tempo-alvo entre 0 e 10 segundos com duas casas decimais
-        self.target_time = round(random.uniform(min_seconds, max_seconds), 2)
+        self.target_time = round(random.uniform(min_seconds, max_seconds), 2) 
         self.shots = {}  # Guarda {player_id: tempo_cronometrado_pelo_cliente}
 
+
+    # Client
     def register_shot(self, player_id: int, shot_time: float):
         """Registra o tempo vindo do cliente (ignora cliques duplicados)."""
         if player_id not in self.shots:
@@ -13,6 +17,7 @@ class DuelTimer:
             return self.shots[player_id]
         return self.shots[player_id]
 
+    #Server
     def all_players_shot(self) -> bool:
         """Checa se ambos os jogadores já enviaram seus tempos."""
         return 1 in self.shots and 2 in self.shots
@@ -38,10 +43,17 @@ class DuelTimer:
         return {
             "winner": winner,
             "target": self.target_time,
-            "player1": {"time": t1, "difference": diff_p1},
-            "player2": {"time": t2, "difference": diff_p2}
+            "player1": {
+                "time": t1,
+                "difference": diff_p1
+            },
+            "player2": {
+                "time": t2,
+                "difference": diff_p2
+            }
         }
 
+    #Server
     def reset(self, min_seconds=0.0, max_seconds=10.0):
         """Reinicia para uma nova rodada."""
         self.target_time = round(random.uniform(min_seconds, max_seconds), 2)
