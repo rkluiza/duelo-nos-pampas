@@ -8,6 +8,10 @@ class DuelTimer:
         self.target_time = round(random.uniform(min_seconds, max_seconds), 2) 
         self.shots = {}  # Guarda {player_id: tempo_cronometrado_pelo_cliente}
 
+        self.score = {
+            1: 0,
+            2: 0
+        }
 
     # Client
     def register_shot(self, player_id: int, shot_time: float):
@@ -58,3 +62,7 @@ class DuelTimer:
         """Reinicia para uma nova rodada."""
         self.target_time = round(random.uniform(min_seconds, max_seconds), 2)
         self.shots = {}
+
+    def update_score(self, winner):
+        if winner in (1, 2):
+            self.score[winner] += 1

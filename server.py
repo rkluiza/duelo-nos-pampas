@@ -1,4 +1,6 @@
+import json
 import socket
+from protocol import encode, decode
 
 host = '127.0.0.1'  # IP pré-configurado
 port = 5000        # Porta pré-configurada
@@ -56,11 +58,18 @@ class ServerConnection:
         linha, _, resto = buffer.partition(b'\n')
         self._buffers[conection] = resto
 
-        message = linha.decode('utf-8')
-        print(f"Mensagem recebida: {message}")  # Mensagem recebida do player
-        return message
+        message = linha.decode("utf-8")
 
-    def send_message_to_player(self, conection, message):
-        # Enviar resposta de volta em bytes, com \n marcando o fim da mensagem
-        conection.sendall((message + '\n').encode('utf-8'))
-        print("Mensagem enviada para o jogador")
+        try:
+            return decode(message)
+        except json.JSONDecodeError:
+            return None
+
+    def send_message_to_player(
+        self,
+        conection,
+        message_type,
+        data=None
+    ):
+        message = encode(message_type, data)
+        conection.sendall(message)
