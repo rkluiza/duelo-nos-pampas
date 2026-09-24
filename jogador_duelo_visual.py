@@ -171,7 +171,12 @@ def processar_mensagem(
     elif tipo == "GAME":
         codigo = data.get("code")
 
-        if codigo == "READY":
+        if codigo == "PRESS_START":
+            estado["fase"] = "aguardar_inicio"
+            estado["texto_topo"] = "Adversário Encontrado!"
+            estado["texto_sub"] = "Preparado para o duelo?"
+
+        elif codigo == "READY":
             estado["fase"] = "preparar"
             rodada = data.get("round")
 
@@ -196,20 +201,6 @@ def processar_mensagem(
                     "Tiro registrado. "
                     "Aguardando o outro jogador..."
                 )
-
-        elif codigo == "NEW_ROUND":
-            estado["fase"] = "preparar"
-            rodada = data.get("round")
-
-            estado["tempo_sorteado"] = None
-            estado["inicio_duelo"] = None
-
-            estado["texto_topo"] = (
-                f"Rodada {rodada}"
-                if rodada is not None
-                else "Nova rodada"
-            )
-            estado["texto_sub"] = "Prepare-se..."
 
     elif tipo == "TARGET":
         estado["tempo_sorteado"] = float(
@@ -263,58 +254,82 @@ def processar_mensagem(
             f"({p2.get('difference', 0):.3f})"
         )
 
-
 def desenhar_textos(tela, fontes, estado):
     largura = tela.get_width()
 
-    faixa = pygame.Surface(
-        (largura, 110),
-        pygame.SRCALPHA,
-    )
+    faixa = pygame.Surface((largura, 110), pygame.SRCALPHA)
     faixa.fill((0, 0, 0, 140))
     tela.blit(faixa, (0, 0))
 
-    topo = fontes["grande"].render(
-        estado["texto_topo"],
-        True,
-        BRANCO,
-    )
-    tela.blit(
-        topo,
-        (
-            largura // 2 - topo.get_width() // 2,
-            12,
-        ),
-    )
+    topo = fontes["grande"].render(estado["texto_topo"], True, BRANCO)
+    tela.blit(topo, (largura // 2 - topo.get_width() // 2, 12))
 
-    sub = fontes["media"].render(
-        estado["texto_sub"],
-        True,
-        AMARELO,
-    )
-    tela.blit(
-        sub,
-        (
-            largura // 2 - sub.get_width() // 2,
-            68,
-        ),
-    )
+    sub = fontes["media"].render(estado["texto_sub"], True, AMARELO)
+    tela.blit(sub, (largura // 2 - sub.get_width() // 2, 68))
 
-    placar_txt = fontes["media"].render(
-        f"Placar: {estado['placar'][0]} x "
-        f"{estado['placar'][1]}",
-        True,
-        BRANCO,
-    )
+    p1_score, p2_score = estado["placar"]
+    COR_ROSA = (255, 0, 102)
 
-    tela.blit(
-        placar_txt,
-        (
-            largura - placar_txt.get_width() - 20,
-            20,
-        ),
-    )
+    txt_1p = fontes["media"].render("PLAYER 1", True, COR_ROSA)
+    txt_score_1 = fontes["media"].render(f"{p1_score:02d}", True, BRANCO)
 
+    txt_2p = fontes["media"].render("PLAYER 2", True, COR_ROSA)
+    txt_score_2 = fontes["media"].render(f"{p2_score:02d}", True, BRANCO)
+
+    tela.blit(txt_1p, (30, 20))
+    tela.blit(txt_score_1, (30 + txt_1p.get_width() // 2 - txt_score_1.get_width() // 2, 60))
+
+    tela.blit(txt_2p, (largura - txt_2p.get_width() - 30, 20))
+    tela.blit(txt_score_2, (largura - 30 - txt_2p.get_width() // 2 - txt_score_2.get_width() // 2, 60))
+
+def desenhar_tela_final(tela, fontes, estado):
+    largura, altura = tela.get_size()
+    
+    fundo_escuro = pygame.Surface((largura, altura), pygame.SRCALPHA)
+    fundo_escuro.fill((15, 10, 25, 235))
+    tela.blit(fundo_escuro, (0, 0))
+
+    p1_score, p2_score = estado["placar"]
+    meu_id = estado["meu_id"]
+
+    COR_ROSA = (255, 0, 102)
+    COR_CIANO = (0, 255, 255)
+    BRANCO = (255, 255, 255)
+
+    if p1_score == p2_score:
+        titulo = "EMPATE"
+        cor_titulo = BRANCO
+    elif (p1_score > p2_score and meu_id == 1) or (p2_score > p1_score and meu_id == 2):
+        titulo = "VITÓRIA!"
+        cor_titulo = COR_CIANO
+    else:
+        titulo = "GAME OVER"
+        cor_titulo = COR_ROSA
+
+    txt_1p = fontes["media"].render("PLAYER 1", True, COR_ROSA)
+    txt_score_1 = fontes["grande"].render(f"{p1_score:02d}", True, BRANCO)
+    
+    txt_2p = fontes["media"].render("PLAYER 2", True, COR_ROSA)
+    txt_score_2 = fontes["grande"].render(f"{p2_score:02d}", True, BRANCO)
+
+    tela.blit(txt_1p, (80, 40))
+    tela.blit(txt_score_1, (80 + txt_1p.get_width()//2 - txt_score_1.get_width()//2, 75))
+    
+    tela.blit(txt_2p, (largura - txt_2p.get_width() - 80, 40))
+    tela.blit(txt_score_2, (largura - 80 - txt_2p.get_width()//2 - txt_score_2.get_width()//2, 75))
+
+    txt_titulo = fontes["gigante"].render(titulo, True, cor_titulo)
+    sombra_titulo = fontes["gigante"].render(titulo, True, (0, 0, 0))
+    
+    pos_titulo_x = largura // 2 - txt_titulo.get_width() // 2
+    pos_titulo_y = altura // 2 - 80
+
+    tela.blit(sombra_titulo, (pos_titulo_x + 6, pos_titulo_y + 6))
+    tela.blit(txt_titulo, (pos_titulo_x, pos_titulo_y))
+
+    if int(time.time() * 2) % 2 == 0:
+        txt_aviso = fontes["media"].render("PRESS ANY KEY TO CONTINUE", True, BRANCO)
+        tela.blit(txt_aviso, (largura // 2 - txt_aviso.get_width() // 2, altura // 2 + 60))
 
 def desenhar(
     tela,
@@ -373,6 +388,10 @@ def desenhar(
 
     desenhar_textos(tela, fontes, estado)
 
+    if estado["fase"] == "fim":
+        desenhar_tela_final(tela, fontes, estado)
+    else:
+        desenhar_textos(tela, fontes, estado)
 
 def main():
     pygame.init()
@@ -385,8 +404,9 @@ def main():
     relogio = pygame.time.Clock()
 
     fontes = {
-        "grande": pygame.font.Font(None, 56),
-        "media": pygame.font.Font(None, 32),
+        "gigante": pygame.font.Font(caminho("PressStart2P-Regular.ttf"), 80),
+        "grande": pygame.font.Font(caminho("PressStart2P-Regular.ttf"), 40),
+        "media": pygame.font.Font(caminho("PressStart2P-Regular.ttf"), 20),
     }
 
     imagens = carregar_imagens()
@@ -449,31 +469,31 @@ def main():
             if evento.type == pygame.QUIT:
                 rodando = False
 
-            elif (
-                evento.type == pygame.KEYDOWN
-                and evento.key == pygame.K_SPACE
-            ):
-                if estado["fase"] == "duelo":
-                    tempo_medido = round(
-                        time.perf_counter()
-                        - estado["inicio_duelo"],
-                        3,
-                    )
+            elif evento.type == pygame.KEYDOWN:
+                if estado["fase"] == "fim":
+                    rodando = False
+                elif evento.key == pygame.K_SPACE:
+                    if estado["fase"] == "duelo":
+                        tempo_medido = round(
+                            time.perf_counter()
+                            - estado["inicio_duelo"],
+                            3,
+                        )
 
-                    estado["fase"] = "aguardando_resultado"
-                    estado["texto_topo"] = (
-                        f"Você marcou {tempo_medido:.3f}s"
-                    )
-                    estado["texto_sub"] = (
-                        "Aguardando o outro jogador..."
-                    )
+                        estado["fase"] = "aguardando_resultado"
+                        estado["texto_topo"] = (
+                            f"Você marcou {tempo_medido:.3f}s"
+                        )
+                        estado["texto_sub"] = (
+                            "Aguardando o outro jogador..."
+                        )
 
-                    player.send_message_to_server(
-                        "SHOT",
-                        {
-                            "time": tempo_medido,
-                        },
-                    )
+                        player.send_message_to_server(
+                            "SHOT",
+                            {
+                                "time": tempo_medido,
+                            },
+                        )
 
         try:
             while True:
